@@ -46,4 +46,10 @@ jobs:
             exit 0
           fi
           git commit -m "chore: daily ranking refresh"
-          git push
+          # rebase + retry guards against the race where two runs commit near-simultaneously
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "push attempt $attempt rejected, rebasing on origin/main"
+            git pull --rebase origin main
+          done
+          exit 1
