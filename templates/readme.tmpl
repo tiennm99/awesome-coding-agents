@@ -1,0 +1,39 @@
+# Awesome Coding Agents
+
+> Curated ranking of AI agent coding tools, sorted by GitHub stars.
+> Updated daily by GitHub Actions.
+
+**Last updated:** {{.UpdatedAt}} · **Tracked:** {{.Total}} repos
+
+| # | Repo | Stars | Δ7d | Language | Last push | Description |
+|---|------|------:|----:|----------|-----------|-------------|
+{{- range .Rows }}
+| {{ .Rank }} | [{{ .NameWithOwner }}]({{ .URL }}) | {{ formatStars .Stars }} | {{ formatDelta .Delta7d .HasDelta }} | {{ .Language }} | {{ .PushedAt }} | {{ .Description }} |
+{{- end }}
+
+---
+
+## How it works
+
+1. `data/agents.yml` is the curated source list.
+2. A daily GitHub Actions workflow (`.github/workflows/update.yml`) runs the Go updater.
+3. The updater fetches live repo metadata via the GitHub GraphQL API in one batched query.
+4. Star counts are appended to `data/history.jsonl` for 7-day delta computation.
+5. This `README.md` is regenerated from `templates/readme.tmpl` and committed back to the repo.
+
+## Contributing
+
+Add an agent to [`data/agents.yml`](data/agents.yml):
+
+```yaml
+agents:
+  - owner: github-username-or-org
+    repo: repository-name
+    category: cli   # cli | ide | extension | library | research | web
+```
+
+Open a PR. The next daily run picks it up automatically.
+
+## License
+
+Apache-2.0

@@ -1,0 +1,10 @@
+# Go build artifacts
+/awesome-coding-agents
+*.exe
+*.test
+*.out
+
+# Editor / OS noise
+.DS_Store
+.idea/
+.vscode/

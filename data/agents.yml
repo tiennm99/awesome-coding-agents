@@ -1,0 +1,62 @@
+# Curated list of AI agent coding tools.
+# Edit this file to add, remove, or recategorize entries.
+# The daily GitHub Actions run will refresh stars and regenerate README.md.
+
+agents:
+  - owner: Aider-AI
+    repo: aider
+    category: cli
+  - owner: cline
+    repo: cline
+    category: extension
+  - owner: continuedev
+    repo: continue
+    category: extension
+  - owner: sst
+    repo: opencode
+    category: cli
+  - owner: charmbracelet
+    repo: crush
+    category: cli
+  - owner: google-gemini
+    repo: gemini-cli
+    category: cli
+  - owner: openai
+    repo: codex
+    category: cli
+  - owner: block
+    repo: goose
+    category: cli
+  - owner: plandex-ai
+    repo: plandex
+    category: cli
+  - owner: gpt-engineer-org
+    repo: gpt-engineer
+    category: cli
+  - owner: SWE-agent
+    repo: SWE-agent
+    category: research
+  - owner: RooCodeInc
+    repo: Roo-Code
+    category: extension
+  - owner: TabbyML
+    repo: tabby
+    category: ide
+  - owner: zed-industries
+    repo: zed
+    category: ide
+  - owner: voideditor
+    repo: void
+    category: ide
+  - owner: anthropics
+    repo: claude-code
+    category: cli
+  - owner: yetone
+    repo: avante.nvim
+    category: extension
+  - owner: stackblitz
+    repo: bolt.new
+    category: web
+  - owner: kortix-ai
+    repo: suna
+    category: web
