@@ -46,10 +46,11 @@ jobs:
             exit 0
           fi
           git commit -m "chore: daily ranking refresh"
-          # rebase + retry guards against the race where two runs commit near-simultaneously
+          # rebase + retry guards against the race where two runs commit near-simultaneously.
+          # -X theirs makes our run's data/history.jsonl line win conflicts (our snapshot is the freshest).
           for attempt in 1 2 3; do
             if git push; then exit 0; fi
             echo "push attempt $attempt rejected, rebasing on origin/main"
-            git pull --rebase origin main
+            git pull --rebase -X theirs origin main
           done
           exit 1
