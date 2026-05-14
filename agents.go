@@ -14,20 +14,17 @@ type Agent struct {
 	Notes    string `yaml:"notes,omitempty"`
 }
 
-type Config struct {
-	Agents []Agent `yaml:"agents"`
-}
-
 func loadAgents(path string) ([]Agent, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	var cfg Config
+	var cfg struct {
+		Agents []Agent `yaml:"agents"`
+	}
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
-	// validate each entry has owner + repo
 	for i, a := range cfg.Agents {
 		if a.Owner == "" || a.Repo == "" {
 			return nil, fmt.Errorf("entry %d missing owner or repo", i)

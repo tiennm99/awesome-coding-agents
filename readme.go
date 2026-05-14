@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
@@ -24,7 +25,8 @@ type Row struct {
 func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int) error {
 	rows := make([]Row, len(stats))
 	for i, s := range stats {
-		delta, has := deltas[s.NameWithOwner]
+		// Deltas are keyed by CanonicalKey (owner/repo from agents.yml).
+		delta, has := deltas[s.CanonicalKey]
 		rows[i] = Row{
 			Rank:          i + 1,
 			NameWithOwner: s.NameWithOwner,
@@ -75,12 +77,7 @@ func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int)
 	}
 	defer f.Close()
 
-	name := tmplPath
-	if i := strings.LastIndex(tmplPath, "/"); i >= 0 {
-		name = tmplPath[i+1:]
-	}
-
-	return tmpl.ExecuteTemplate(f, name, map[string]any{
+	return tmpl.ExecuteTemplate(f, filepath.Base(tmplPath), map[string]any{
 		"Rows":      rows,
 		"UpdatedAt": time.Now().UTC().Format("2006-01-02 15:04 UTC"),
 		"Total":     len(rows),

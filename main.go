@@ -15,7 +15,7 @@ func main() {
 func run() error {
 	agents, err := loadAgents("data/agents.yml")
 	if err != nil {
-		return fmt.Errorf("load agents: %w", err)
+		return err
 	}
 	if len(agents) == 0 {
 		return fmt.Errorf("no agents in data/agents.yml")
@@ -28,18 +28,16 @@ func run() error {
 
 	stats, err := fetchStats(token, agents)
 	if err != nil {
-		return fmt.Errorf("fetch stats: %w", err)
+		return err
 	}
-
-	sortByStars(stats)
 
 	deltas, err := appendHistory("data/history.jsonl", stats)
 	if err != nil {
-		return fmt.Errorf("append history: %w", err)
+		return err
 	}
 
 	if err := renderReadme("templates/readme.tmpl", "README.md", stats, deltas); err != nil {
-		return fmt.Errorf("render readme: %w", err)
+		return err
 	}
 
 	fmt.Printf("updated %d agents\n", len(stats))

@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"time"
 )
 
 type Stat struct {
+	// CanonicalKey is owner/repo from agents.yml — stable across renames.
+	CanonicalKey  string
 	Owner         string
 	Repo          string
 	Category      string
@@ -53,62 +55,53 @@ const repoFields = `
 		nameWithOwner
 	`
 
+// httpClient has a timeout to prevent hung workflow jobs.
+var httpClient = &http.Client{Timeout: 30 * time.Second}
+
+// chunkSize is the max aliases per GraphQL request (GitHub node-limit safety margin).
+const chunkSize = 50
+
+// maxRetries and retry backoff for transient HTTP/network errors.
+const maxRetries = 3
+
+var retryBackoff = []time.Duration{2 * time.Second, 4 * time.Second, 8 * time.Second}
+
+// fetchStats queries GitHub GraphQL in chunks of up to chunkSize repos per
+// request. Returns an error if any GraphQL errors are present OR if any
+// requested repo is missing from the response — better to fail loud than
+// silently publish a shorter README.
 func fetchStats(token string, agents []Agent) ([]Stat, error) {
-	var b strings.Builder
-	b.WriteString("query {\n")
-	for i, a := range agents {
-		fmt.Fprintf(&b, "  r%d: repository(owner: %q, name: %q) {%s}\n", i, a.Owner, a.Repo, repoFields)
-	}
-	b.WriteString("}\n")
+	collected := make(map[string]*repoNode, len(agents))
 
-	body, err := json.Marshal(map[string]string{"query": b.String()})
-	if err != nil {
-		return nil, err
-	}
+	for start := 0; start < len(agents); start += chunkSize {
+		end := start + chunkSize
+		if end > len(agents) {
+			end = len(agents)
+		}
+		chunk := agents[start:end]
 
-	req, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewReader(body))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "awesome-coding-agents-updater")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	raw, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("graphql HTTP %d: %s", resp.StatusCode, raw)
-	}
-
-	var out graphQLResponse
-	if err := json.Unmarshal(raw, &out); err != nil {
-		return nil, fmt.Errorf("decode response: %w (body=%s)", err, raw)
-	}
-	for _, e := range out.Errors {
-		// repos that 404 or are renamed land here; continue with partial data
-		fmt.Fprintf(os.Stderr, "graphql warn: %s (path=%v)\n", e.Message, e.Path)
+		nodes, err := fetchChunk(token, chunk, start)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range nodes {
+			collected[k] = v
+		}
 	}
 
 	stats := make([]Stat, 0, len(agents))
 	for i, a := range agents {
-		node := out.Data[fmt.Sprintf("r%d", i)]
+		alias := fmt.Sprintf("r%d", i)
+		node := collected[alias]
 		if node == nil {
-			fmt.Fprintf(os.Stderr, "skip %s/%s — no data\n", a.Owner, a.Repo)
-			continue
+			return nil, fmt.Errorf("repo %s/%s missing from GraphQL response", a.Owner, a.Repo)
 		}
 		lang := ""
 		if node.PrimaryLanguage != nil {
 			lang = node.PrimaryLanguage.Name
 		}
 		stats = append(stats, Stat{
+			CanonicalKey:  a.Owner + "/" + a.Repo,
 			Owner:         a.Owner,
 			Repo:          a.Repo,
 			Category:      a.Category,
@@ -121,11 +114,102 @@ func fetchStats(token string, agents []Agent) ([]Stat, error) {
 			NameWithOwner: node.NameWithOwner,
 		})
 	}
+
+	// Sort by stars descending. Ties are ordered by CanonicalKey for determinism
+	// regardless of map-iteration or agents.yml order.
+	sort.Slice(stats, func(i, j int) bool {
+		if stats[i].Stars != stats[j].Stars {
+			return stats[i].Stars > stats[j].Stars
+		}
+		return stats[i].CanonicalKey < stats[j].CanonicalKey
+	})
+
 	return stats, nil
 }
 
-func sortByStars(stats []Stat) {
-	sort.SliceStable(stats, func(i, j int) bool {
-		return stats[i].Stars > stats[j].Stars
-	})
+// fetchChunk sends one GraphQL request for a slice of agents. aliasOffset
+// ensures alias names (r0, r1, …) are globally unique across chunks.
+func fetchChunk(token string, agents []Agent, aliasOffset int) (map[string]*repoNode, error) {
+	var b strings.Builder
+	b.WriteString("query {\n")
+	for i, a := range agents {
+		fmt.Fprintf(&b, "  r%d: repository(owner: %q, name: %q) {%s}\n", aliasOffset+i, a.Owner, a.Repo, repoFields)
+	}
+	b.WriteString("}\n")
+
+	body, err := json.Marshal(map[string]string{"query": b.String()})
+	if err != nil {
+		return nil, err
+	}
+
+	raw, statusCode, err := doWithRetry(token, body)
+	if err != nil {
+		return nil, err
+	}
+	if statusCode != http.StatusOK {
+		return nil, fmt.Errorf("graphql HTTP %d: %s", statusCode, raw)
+	}
+
+	var out graphQLResponse
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, fmt.Errorf("decode response: %w (body=%s)", err, raw)
+	}
+
+	// Treat any GraphQL-level error as fatal — partial data silently shrinks
+	// the README and corrupts future delta math.
+	if len(out.Errors) > 0 {
+		msgs := make([]string, len(out.Errors))
+		for i, e := range out.Errors {
+			msgs[i] = fmt.Sprintf("%s (path=%v)", e.Message, e.Path)
+		}
+		return nil, fmt.Errorf("graphql errors: %s", strings.Join(msgs, "; "))
+	}
+
+	return out.Data, nil
+}
+
+// doWithRetry executes the GraphQL POST with exponential backoff on transient
+// errors (network failures, HTTP 5xx, HTTP 429). 4xx other than 429 are not
+// retried.
+func doWithRetry(token string, body []byte) ([]byte, int, error) {
+	var lastErr error
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			log.Printf("retry attempt %d after %v: %v", attempt, retryBackoff[attempt-1], lastErr)
+			time.Sleep(retryBackoff[attempt-1])
+		}
+
+		req, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewReader(body))
+		if err != nil {
+			return nil, 0, err
+		}
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", "awesome-coding-agents-updater")
+
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			lastErr = err
+			continue // network error — retry
+		}
+
+		raw, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("read body: %w", err)
+			continue
+		}
+
+		sc := resp.StatusCode
+		if sc == http.StatusOK {
+			return raw, sc, nil
+		}
+		if sc == http.StatusTooManyRequests || sc >= 500 {
+			lastErr = fmt.Errorf("HTTP %d: %s", sc, raw)
+			continue // retryable
+		}
+		// 4xx (except 429) — not retryable
+		return raw, sc, nil
+	}
+	return nil, 0, fmt.Errorf("all %d attempts failed; last error: %w", maxRetries, lastErr)
 }
