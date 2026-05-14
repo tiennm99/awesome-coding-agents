@@ -14,6 +14,9 @@ on:
       - '.github/workflows/update.yml'
 
 permissions:
+  # Uses GITHUB_TOKEN intentionally — a PAT would cause infinite trigger loops
+  # on the auto-commit ("chore: daily ranking refresh") because GITHUB_TOKEN-authored
+  # pushes do NOT re-trigger workflows, whereas a PAT would.
   contents: write
 
 concurrency:
@@ -46,11 +49,30 @@ jobs:
             exit 0
           fi
           git commit -m "chore: daily ranking refresh"
-          # rebase + retry guards against the race where two runs commit near-simultaneously.
-          # -X theirs makes our run's data/history.jsonl line win conflicts (our snapshot is the freshest).
+          # Rebase + retry guards against the race where two runs commit near-simultaneously.
+          # Strategy: plain rebase first; only force-resolve bot-generated files (README.md,
+          # data/history.jsonl) when they are the sole conflicts. If any human-maintained file
+          # (e.g. data/agents.yml) conflicts, abort and fail loudly so a human can investigate.
           for attempt in 1 2 3; do
             if git push; then exit 0; fi
             echo "push attempt $attempt rejected, rebasing on origin/main"
-            git pull --rebase -X theirs origin main
+            if git pull --rebase origin main; then
+              # Clean rebase — no conflicts; loop back to try push again.
+              continue
+            fi
+            # Rebase stopped on conflicts. Inspect which files are unresolved.
+            conflicted=$(git diff --name-only --diff-filter=U)
+            echo "conflicted files: $conflicted"
+            # Only auto-resolve if ALL conflicts are in bot-generated files.
+            non_bot=$(echo "$conflicted" | grep -v -E '^(README\.md|data/history\.jsonl)$' || true)
+            if [ -n "$non_bot" ]; then
+              echo "ERROR: conflict in human-maintained file(s): $non_bot — aborting rebase"
+              git rebase --abort
+              exit 1
+            fi
+            # Safe to force-resolve: keep our (freshest) bot-generated content.
+            git checkout --theirs README.md data/history.jsonl 2>/dev/null || true
+            git add README.md data/history.jsonl
+            GIT_EDITOR=true git rebase --continue
           done
           exit 1
