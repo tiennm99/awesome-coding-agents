@@ -33,10 +33,10 @@ func TestComputeDeltas_SevenDayWindow(t *testing.T) {
 	today := now.Format("2006-01-02")
 
 	tests := []struct {
-		name      string
-		daysAgo   int
+		name        string
+		daysAgo     int
 		expectDelta bool
-		desc      string
+		desc        string
 	}{
 		{
 			name:        "snapshot at exactly 7 days ago",
