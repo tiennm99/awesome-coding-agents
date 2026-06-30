@@ -60,3 +60,6 @@ agents:
   - owner: kortix-ai
     repo: suna
     category: web
+  - owner: Necmttn
+    repo: ax
+    category: cli
