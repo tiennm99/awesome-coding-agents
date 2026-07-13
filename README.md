@@ -3,29 +3,29 @@
 > Curated ranking of AI agent coding tools, sorted by GitHub stars.
 > Updated daily by GitHub Actions.
 
-**Last updated:** 2026-07-12 02:57 UTC · **Tracked:** 19 repos
+**Last updated:** 2026-07-13 03:15 UTC · **Tracked:** 19 repos
 
 | # | Repo | Stars | Δ7d | Language | Last push | Description |
 |---|------|------:|----:|----------|-----------|-------------|
-| 1 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | 184.9k | +2456 | TypeScript | 2026-07-12 | The open source coding agent. |
-| 2 | [anthropics/claude-code](https://github.com/anthropics/claude-code) | 137.5k | +1373 | Python | 2026-07-11 | Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands. |
-| 3 | [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) | 105.9k | +182 | TypeScript | 2026-07-12 | An open-source AI agent that brings the power of Gemini directly into your terminal. |
-| 4 | [openai/codex](https://github.com/openai/codex) | 97.2k | +1700 | Rust | 2026-07-11 | Lightweight coding agent that runs in your terminal |
-| 5 | [zed-industries/zed](https://github.com/zed-industries/zed) | 86.8k | +320 | Rust | 2026-07-12 | Code at the speed of thought – Zed is a high-performance, multiplayer code editor from the creators of Atom and Tree-sitter. |
-| 6 | [cline/cline](https://github.com/cline/cline) | 64.6k | +278 | TypeScript | 2026-07-11 | Autonomous coding agent as an SDK, IDE extension, or CLI assistant. |
-| 7 | [AntonOsika/gpt-engineer](https://github.com/AntonOsika/gpt-engineer) | 55.2k | -9 | Python | 2025-05-14 | CLI platform to experiment with codegen. Precursor to: https://lovable.dev |
-| 8 | [aaif-goose/goose](https://github.com/aaif-goose/goose) | 51.1k | +440 | Rust | 2026-07-11 | an open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM |
-| 9 | [Aider-AI/aider](https://github.com/Aider-AI/aider) | 47.3k | +253 | Python | 2026-05-22 | aider is AI pair programming in your terminal |
-| 10 | [continuedev/continue](https://github.com/continuedev/continue) | 34.8k | +141 | TypeScript | 2026-07-12 | open-source coding agent |
-| 11 | [TabbyML/tabby](https://github.com/TabbyML/tabby) | 33.7k | +13 | Rust | 2026-06-30 | Self-hosted AI coding assistant |
-| 12 | [voideditor/void](https://github.com/voideditor/void) | 28.8k | +10 | TypeScript | 2026-06-02 |  |
-| 13 | [charmbracelet/crush](https://github.com/charmbracelet/crush) | 26.5k | +397 | Go | 2026-07-12 | Glamourous agentic coding for all 💘 |
-| 14 | [RooCodeInc/Roo-Code](https://github.com/RooCodeInc/Roo-Code) | 24.3k | +17 | TypeScript | 2026-05-15 | Roo Code gives you a whole dev team of AI agents in your code editor. |
-| 15 | [kortix-ai/suna](https://github.com/kortix-ai/suna) | 20.0k | +40 | TypeScript | 2026-07-12 | The Company AI Command Center |
-| 16 | [SWE-agent/SWE-agent](https://github.com/SWE-agent/SWE-agent) | 19.8k | +72 | Python | 2026-07-07 | SWE-agent takes a GitHub issue and tries to automatically fix it, using your LM of choice. It can also be employed for offensive cybersecurity or competitive coding challenges. [NeurIPS 2024] |
-| 17 | [yetone/avante.nvim](https://github.com/yetone/avante.nvim) | 18.0k | +18 | Lua | 2026-07-08 | Use your Neovim like using Cursor AI IDE! |
-| 18 | [stackblitz/bolt.new](https://github.com/stackblitz/bolt.new) | 16.5k | +11 | TypeScript | 2024-12-17 | Prompt, run, edit, and deploy full-stack web applications. -- bolt.new -- Help Center: https://support.bolt.new/ -- Community Support: https://discord.com/invite/stackblitz |
-| 19 | [plandex-ai/plandex](https://github.com/plandex-ai/plandex) | 15.5k | +18 | Go | 2025-10-03 | Open source AI coding agent. Designed for large projects and real world tasks. |
+| 1 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | 185.1k | +2434 | TypeScript | 2026-07-13 | The open source coding agent. |
+| 2 | [anthropics/claude-code](https://github.com/anthropics/claude-code) | 137.6k | +1253 | Python | 2026-07-11 | Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands. |
+| 3 | [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) | 105.9k | +161 | TypeScript | 2026-07-13 | An open-source AI agent that brings the power of Gemini directly into your terminal. |
+| 4 | [openai/codex](https://github.com/openai/codex) | 97.4k | +1729 | Rust | 2026-07-13 | Lightweight coding agent that runs in your terminal |
+| 5 | [zed-industries/zed](https://github.com/zed-industries/zed) | 86.9k | +338 | Rust | 2026-07-13 | Code at the speed of thought – Zed is a high-performance, multiplayer code editor from the creators of Atom and Tree-sitter. |
+| 6 | [cline/cline](https://github.com/cline/cline) | 64.6k | +258 | TypeScript | 2026-07-12 | Autonomous coding agent as an SDK, IDE extension, or CLI assistant. |
+| 7 | [AntonOsika/gpt-engineer](https://github.com/AntonOsika/gpt-engineer) | 55.2k | -12 | Python | 2025-05-14 | CLI platform to experiment with codegen. Precursor to: https://lovable.dev |
+| 8 | [aaif-goose/goose](https://github.com/aaif-goose/goose) | 51.1k | +436 | Rust | 2026-07-13 | an open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM |
+| 9 | [Aider-AI/aider](https://github.com/Aider-AI/aider) | 47.3k | +233 | Python | 2026-05-22 | aider is AI pair programming in your terminal |
+| 10 | [continuedev/continue](https://github.com/continuedev/continue) | 34.8k | +137 | TypeScript | 2026-07-13 | open-source coding agent |
+| 11 | [TabbyML/tabby](https://github.com/TabbyML/tabby) | 33.7k | +10 | Rust | 2026-06-30 | Self-hosted AI coding assistant |
+| 12 | [voideditor/void](https://github.com/voideditor/void) | 28.8k | +12 | TypeScript | 2026-06-02 |  |
+| 13 | [charmbracelet/crush](https://github.com/charmbracelet/crush) | 26.5k | +386 | Go | 2026-07-13 | Glamourous agentic coding for all 💘 |
+| 14 | [RooCodeInc/Roo-Code](https://github.com/RooCodeInc/Roo-Code) | 24.3k | +20 | TypeScript | 2026-05-15 | Roo Code gives you a whole dev team of AI agents in your code editor. |
+| 15 | [kortix-ai/suna](https://github.com/kortix-ai/suna) | 20.0k | +42 | TypeScript | 2026-07-12 | The Company AI Command Center |
+| 16 | [SWE-agent/SWE-agent](https://github.com/SWE-agent/SWE-agent) | 19.8k | +81 | Python | 2026-07-07 | SWE-agent takes a GitHub issue and tries to automatically fix it, using your LM of choice. It can also be employed for offensive cybersecurity or competitive coding challenges. [NeurIPS 2024] |
+| 17 | [yetone/avante.nvim](https://github.com/yetone/avante.nvim) | 18.0k | +20 | Lua | 2026-07-08 | Use your Neovim like using Cursor AI IDE! |
+| 18 | [stackblitz/bolt.new](https://github.com/stackblitz/bolt.new) | 16.5k | +12 | TypeScript | 2024-12-17 | Prompt, run, edit, and deploy full-stack web applications. -- bolt.new -- Help Center: https://support.bolt.new/ -- Community Support: https://discord.com/invite/stackblitz |
+| 19 | [plandex-ai/plandex](https://github.com/plandex-ai/plandex) | 15.5k | +23 | Go | 2025-10-03 | Open source AI coding agent. Designed for large projects and real world tasks. |
 
 ---
 
