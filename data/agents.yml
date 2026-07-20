@@ -60,3 +60,7 @@ agents:
   - owner: kortix-ai
     repo: suna
     category: web
+  - owner: ofekron
+    repo: better-agent
+    category: web
+    notes: Source-available; free for non-commercial use; commercial use requires separate permission.
