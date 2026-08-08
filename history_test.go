@@ -153,20 +153,20 @@ func TestReadSnapshots_MissingFile(t *testing.T) {
 func TestApplyMigrations(t *testing.T) {
 	// Test the canonical key migration logic.
 	stars := map[string]int{
-		"aaif-goose/goose": 45115,
-		"other/repo":       1000,
+		"block/goose": 45115,
+		"other/repo":  1000,
 	}
 
 	result := applyMigrations(stars)
 
 	// The old key should be removed.
-	if _, ok := result["aaif-goose/goose"]; ok {
-		t.Errorf("old key 'aaif-goose/goose' should be removed")
+	if _, ok := result["block/goose"]; ok {
+		t.Errorf("old key 'block/goose' should be removed")
 	}
 
 	// The new key should be present with the value.
-	if v, ok := result["block/goose"]; !ok || v != 45115 {
-		t.Errorf("new key 'block/goose': expected 45115, got %v", v)
+	if v, ok := result["aaif-goose/goose"]; !ok || v != 45115 {
+		t.Errorf("new key 'aaif-goose/goose': expected 45115, got %v", v)
 	}
 
 	// Other keys should be unchanged.

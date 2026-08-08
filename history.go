@@ -19,12 +19,19 @@ type Snapshot struct {
 // and history.jsonl contains the old name.
 //
 // Known renames:
-//   - block/goose was formerly tracked as aaif-goose/goose
+//   - goose moved block → aaif-goose (Agentic AI Foundation); history contains
+//     both spellings from earlier flip-flops, so map the non-canonical one.
+//   - opencode moved sst → anomalyco
+//   - gpt-engineer moved gpt-engineer-org → AntonOsika
 var canonicalKeyMigrations = map[string]string{
-	"aaif-goose/goose": "block/goose",
+	"block/goose":                   "aaif-goose/goose",
+	"sst/opencode":                  "anomalyco/opencode",
+	"gpt-engineer-org/gpt-engineer": "AntonOsika/gpt-engineer",
 }
 
-func appendHistory(path string, stats []Stat) (map[string]int, error) {
+// appendHistory persists today's snapshot and returns the full snapshot list
+// (oldest first, including today) plus the 7-day deltas per canonical key.
+func appendHistory(path string, stats []Stat) ([]Snapshot, map[string]int, error) {
 	today := time.Now().UTC().Format("2006-01-02")
 
 	// Key snapshots by canonical owner/repo from agents.yml, not by the
@@ -36,7 +43,7 @@ func appendHistory(path string, stats []Stat) (map[string]int, error) {
 
 	snapshots, err := readSnapshots(path)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	deltas := computeDeltas(snapshots, current)
@@ -45,7 +52,7 @@ func appendHistory(path string, stats []Stat) (map[string]int, error) {
 	kept := slices.DeleteFunc(snapshots, func(s Snapshot) bool { return s.Date == today })
 	kept = append(kept, current)
 
-	return deltas, writeSnapshots(path, kept)
+	return kept, deltas, writeSnapshots(path, kept)
 }
 
 func readSnapshots(path string) ([]Snapshot, error) {

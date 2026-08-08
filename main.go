@@ -31,12 +31,16 @@ func run() error {
 		return err
 	}
 
-	deltas, err := appendHistory("data/history.jsonl", stats)
+	snapshots, deltas, err := appendHistory("data/history.jsonl", stats)
 	if err != nil {
 		return err
 	}
 
 	if err := renderReadme("templates/readme.tmpl", "README.md", stats, deltas); err != nil {
+		return err
+	}
+
+	if err := writeSiteData("site/data.json", stats, deltas, snapshots); err != nil {
 		return err
 	}
 

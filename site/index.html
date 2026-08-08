@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awesome Coding Agents — Rankings &amp; History</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1f2328; --muted: #656d76; --border: #d0d7de;
+    --accent: #0969da; --chip: #f6f8fa; --chip-on: #0969da; --chip-on-fg: #fff;
+    --pos: #1a7f37; --neg: #cf222e; --row-hover: #f6f8fa;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --fg: #e6edf3; --muted: #8b949e; --border: #30363d;
+      --accent: #58a6ff; --chip: #21262d; --chip-on: #1f6feb; --chip-on-fg: #fff;
+      --pos: #3fb950; --neg: #f85149; --row-hover: #161b22;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 1.5rem; background: var(--bg); color: var(--fg);
+    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    max-width: 1200px; margin-inline: auto;
+  }
+  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
+  .sub { color: var(--muted); margin-bottom: 1.25rem; }
+  .sub a { color: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin: 1rem 0; }
+  .chips button {
+    border: 1px solid var(--border); background: var(--chip); color: var(--fg);
+    border-radius: 999px; padding: .25rem .85rem; cursor: pointer; font-size: .9rem;
+  }
+  .chips button.on { background: var(--chip-on); color: var(--chip-on-fg); border-color: var(--chip-on); }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; min-width: 780px; }
+  th, td { padding: .5rem .75rem; text-align: left; border-top: 1px solid var(--border); }
+  thead th { border-top: none; background: var(--chip); cursor: pointer; user-select: none; white-space: nowrap; }
+  thead th .dir { color: var(--accent); }
+  tbody tr:hover { background: var(--row-hover); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.desc { color: var(--muted); font-size: .9rem; max-width: 34rem; }
+  a.repo { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+  a.repo:hover { text-decoration: underline; }
+  .pos { color: var(--pos); } .neg { color: var(--neg); }
+  .cat {
+    display: inline-block; font-size: .75rem; padding: .05rem .5rem;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--muted);
+  }
+  h2 { font-size: 1.2rem; margin: 2rem 0 .5rem; }
+  .chartwrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .hint { color: var(--muted); font-size: .85rem; margin: .35rem 0 0; }
+  #err { color: var(--neg); }
+</style>
+</head>
+<body>
+  <h1>Awesome Coding Agents</h1>
+  <div class="sub">
+    Curated ranking of AI agent coding tools by GitHub stars, refreshed daily ·
+    <span id="meta">loading…</span> ·
+    <a href="https://github.com/tiennm99/awesome-coding-agents">GitHub repo</a>
+  </div>
+  <div id="err"></div>
+
+  <div class="chips" id="chips"></div>
+  <div class="tablewrap"><table id="tbl">
+    <thead><tr>
+      <th data-k="rank" class="num">#</th>
+      <th data-k="nameWithOwner">Repo</th>
+      <th data-k="stars" class="num">Stars</th>
+      <th data-k="delta7d" class="num">Δ7d</th>
+      <th data-k="category">Category</th>
+      <th data-k="language">Language</th>
+      <th data-k="pushedAt">Last push</th>
+      <th>Description</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table></div>
+
+  <h2>Star history</h2>
+  <div class="chartwrap"><canvas id="chart"></canvas></div>
+  <p class="hint">Top 12 repos shown by default — click legend entries to toggle series. The category filter above also filters the chart.</p>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
+<script>
+(async function () {
+  let data;
+  try {
+    const res = await fetch('data.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+  } catch (e) {
+    document.getElementById('err').textContent = 'Failed to load data.json: ' + e.message;
+    return;
+  }
+
+  const rows = data.rows.map((r, i) => ({ ...r, rank: i + 1 }));
+  document.getElementById('meta').textContent =
+    'Last updated ' + data.updatedAt + ' · ' + rows.length + ' repos tracked';
+
+  // --- category filter chips ---
+  const cats = ['all', ...new Set(rows.map(r => r.category).filter(Boolean).sort())];
+  let activeCat = 'all';
+  const chipBox = document.getElementById('chips');
+  for (const c of cats) {
+    const b = document.createElement('button');
+    b.textContent = c;
+    b.className = c === activeCat ? 'on' : '';
+    b.onclick = () => {
+      activeCat = c;
+      chipBox.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      renderTable(); renderChart();
+    };
+    chipBox.appendChild(b);
+  }
+
+  const visible = () => activeCat === 'all' ? rows : rows.filter(r => r.category === activeCat);
+
+  // --- sortable table ---
+  const fmtStars = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n);
+  let sortKey = 'rank', sortAsc = true;
+  document.querySelectorAll('thead th[data-k]').forEach(th => {
+    th.onclick = () => {
+      const k = th.dataset.k;
+      if (sortKey === k) sortAsc = !sortAsc;
+      else { sortKey = k; sortAsc = (k === 'rank' || k === 'nameWithOwner' || k === 'category' || k === 'language'); }
+      renderTable();
+    };
+  });
+
+  function renderTable() {
+    const list = [...visible()].sort((a, b) => {
+      const va = a[sortKey], vb = b[sortKey];
+      const cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
+      return sortAsc ? cmp : -cmp;
+    });
+    document.querySelectorAll('thead th .dir').forEach(s => s.remove());
+    const th = document.querySelector('thead th[data-k="' + sortKey + '"]');
+    if (th) th.insertAdjacentHTML('beforeend', ' <span class="dir">' + (sortAsc ? '▲' : '▼') + '</span>');
+
+    const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    document.querySelector('#tbl tbody').innerHTML = list.map(r => `
+      <tr>
+        <td class="num">${r.rank}</td>
+        <td><a class="repo" href="${esc(r.url)}">${esc(r.nameWithOwner)}</a></td>
+        <td class="num">${fmtStars(r.stars)}</td>
+        <td class="num ${r.delta7d > 0 ? 'pos' : r.delta7d < 0 ? 'neg' : ''}">${r.hasDelta ? (r.delta7d > 0 ? '+' : '') + r.delta7d : '—'}</td>
+        <td><span class="cat">${esc(r.category || '—')}</span></td>
+        <td>${esc(r.language || '')}</td>
+        <td>${esc(r.pushedAt)}</td>
+        <td class="desc">${esc(r.description)}${r.notes ? ' · <em>' + esc(r.notes) + '</em>' : ''}</td>
+      </tr>`).join('');
+  }
+
+  // --- star-history line chart ---
+  const dates = data.history.map(s => s.date);
+  const color = i => 'hsl(' + Math.round(i * 137.508) % 360 + ' 65% 50%)';
+  const styles = getComputedStyle(document.documentElement);
+  Chart.defaults.color = styles.getPropertyValue('--muted').trim();
+  Chart.defaults.borderColor = styles.getPropertyValue('--border').trim();
+  let chart;
+
+  function renderChart() {
+    const list = visible();
+    const datasets = list.map((r, i) => ({
+      label: r.nameWithOwner,
+      data: data.history.map(s => s.stars[r.key] ?? null),
+      borderColor: color(i),
+      backgroundColor: color(i),
+      pointRadius: 0,
+      borderWidth: 2,
+      spanGaps: true,
+      hidden: i >= 12, // top 12 visible; rest toggleable via legend
+    }));
+    if (chart) chart.destroy();
+    chart = new Chart(document.getElementById('chart'), {
+      type: 'line',
+      data: { labels: dates, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'nearest', intersect: false },
+        scales: {
+          y: { ticks: { callback: v => fmtStars(v) } },
+          x: { ticks: { maxTicksLimit: 12 } },
+        },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 12, boxHeight: 12 } },
+          tooltip: { callbacks: { label: c => c.dataset.label + ': ' + (c.parsed.y ?? '—').toLocaleString() } },
+        },
+      },
+    });
+  }
+
+  renderTable();
+  renderChart();
+})();
+</script>
+</body>
+</html>
