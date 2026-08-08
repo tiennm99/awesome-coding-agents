@@ -1,6 +1,10 @@
 # Curated list of AI agent coding tools.
 # Edit this file to add, remove, or recategorize entries.
 # The daily GitHub Actions run will refresh stars and regenerate README.md.
+#
+# owner/repo must be the CURRENT canonical GitHub slug. When a tracked repo is
+# renamed, update it here AND add a key migration in history.go so historical
+# star data stays attached.
 
 agents:
   - owner: Aider-AI
@@ -12,7 +16,7 @@ agents:
   - owner: continuedev
     repo: continue
     category: extension
-  - owner: sst
+  - owner: anomalyco
     repo: opencode
     category: cli
   - owner: charmbracelet
@@ -21,16 +25,18 @@ agents:
   - owner: google-gemini
     repo: gemini-cli
     category: cli
+    notes: Google announced a closed-source successor; OSS repo may be retired
   - owner: openai
     repo: codex
     category: cli
-  - owner: block
+  - owner: aaif-goose
     repo: goose
     category: cli
+    notes: Moved to the Agentic AI Foundation (Linux Foundation)
   - owner: plandex-ai
     repo: plandex
     category: cli
-  - owner: gpt-engineer-org
+  - owner: AntonOsika
     repo: gpt-engineer
     category: cli
   - owner: SWE-agent
@@ -60,3 +66,34 @@ agents:
   - owner: kortix-ai
     repo: suna
     category: web
+  - owner: earendil-works
+    repo: pi
+    category: cli
+  - owner: OpenHands
+    repo: OpenHands
+    category: web
+  - owner: warpdotdev
+    repo: warp
+    category: ide
+    notes: Agentic terminal; client open-sourced Apr 2026 (AGPL-3.0)
+  - owner: Pythagora-io
+    repo: gpt-pilot
+    category: cli
+  - owner: QwenLM
+    repo: qwen-code
+    category: cli
+  - owner: Kilo-Org
+    repo: kilocode
+    category: extension
+  - owner: onlook-dev
+    repo: onlook
+    category: web
+  - owner: dyad-sh
+    repo: dyad
+    category: web
+  - owner: bytedance
+    repo: trae-agent
+    category: research
+  - owner: github
+    repo: copilot-cli
+    category: cli
