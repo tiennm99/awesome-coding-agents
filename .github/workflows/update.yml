@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'data/agents.yml'
+      - 'site/**'
       - 'templates/**'
       - '**.go'
       - 'go.mod'
