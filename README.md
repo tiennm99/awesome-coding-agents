@@ -5,7 +5,7 @@
 
 📊 **[Interactive dashboard with star-history charts →](https://tiennm99.github.io/awesome-coding-agents/)**
 
-**Last updated:** 2026-08-08 19:43 UTC · **Tracked:** 29 repos
+**Last updated:** 2026-08-08 19:48 UTC · **Tracked:** 29 repos
 
 | # | Repo | Stars | Δ7d | Language | Last push | Description |
 |---|------|------:|----:|----------|-----------|-------------|
@@ -29,7 +29,7 @@
 | 18 | [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code) | 26.9k | — | TypeScript | 2026-08-08 | An open-source AI coding agent that lives in your terminal. |
 | 19 | [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode) | 26.8k | — | TypeScript | 2026-08-08 | Kilo is the all-in-one agentic engineering platform. Build, ship, and iterate faster with the most popular open source coding agent. |
 | 20 | [onlook-dev/onlook](https://github.com/onlook-dev/onlook) | 26.4k | — | TypeScript | 2026-07-22 | The Cursor for Designers • An Open-Source AI-First Design tool • Visually build, style, and edit your React App with AI |
-| 21 | [RooCodeInc/Roo-Code](https://github.com/RooCodeInc/Roo-Code) | 24.4k | -11 | TypeScript | 2026-05-15 | Roo Code gives you a whole dev team of AI agents in your code editor. |
+| 21 | [RooCodeInc/Roo-Code](https://github.com/RooCodeInc/Roo-Code) | 24.4k | -10 | TypeScript | 2026-05-15 | Roo Code gives you a whole dev team of AI agents in your code editor. |
 | 22 | [dyad-sh/dyad](https://github.com/dyad-sh/dyad) | 21.1k | — | TypeScript | 2026-08-07 | Local, open-source AI app builder for power users ✨ v0 / Lovable / Replit / Bolt alternative 🌟 Star if you like it! |
 | 23 | [kortix-ai/suna](https://github.com/kortix-ai/suna) | 20.1k | +35 | TypeScript | 2026-08-08 | The open-source AI Management System |
 | 24 | [SWE-agent/SWE-agent](https://github.com/SWE-agent/SWE-agent) | 20.0k | +54 | Python | 2026-08-03 | SWE-agent takes a GitHub issue and tries to automatically fix it, using your LM of choice. It can also be employed for offensive cybersecurity or competitive coding challenges. [NeurIPS 2024] |
