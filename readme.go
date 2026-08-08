@@ -75,13 +75,17 @@ func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 
-	return tmpl.ExecuteTemplate(f, filepath.Base(tmplPath), map[string]any{
+	execErr := tmpl.ExecuteTemplate(f, filepath.Base(tmplPath), map[string]any{
 		"Rows":      rows,
 		"UpdatedAt": time.Now().UTC().Format("2006-01-02 15:04 UTC"),
 		"Total":     len(rows),
 	})
+	// A failed close on a write path can hide lost data — surface it.
+	if closeErr := f.Close(); closeErr != nil && execErr == nil {
+		execErr = closeErr
+	}
+	return execErr
 }
 
 // sanitizeCell escapes pipe and newline characters so descriptions stay in one table cell.
