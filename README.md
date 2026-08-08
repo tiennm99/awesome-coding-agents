@@ -5,12 +5,12 @@
 
 📊 **[Interactive dashboard with star-history charts →](https://tiennm99.github.io/awesome-coding-agents/)**
 
-**Last updated:** 2026-08-08 20:33 UTC · **Tracked:** 29 repos
-**Top 7-day mover:** [anomalyco/opencode](https://github.com/anomalyco/opencode) (+3363 stars)
+**Last updated:** 2026-08-08 20:37 UTC · **Tracked:** 29 repos
+**Top 7-day mover:** [anomalyco/opencode](https://github.com/anomalyco/opencode) (+3365 stars)
 
 | # | Repo | Stars | Δ7d | Language | Last push | Description |
 |---|------|------:|----:|----------|-----------|-------------|
-| 1 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | 195.1k | +3363 | TypeScript | 2026-08-08 | The open source coding agent. |
+| 1 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | 195.1k | +3365 | TypeScript | 2026-08-08 | The open source coding agent. |
 | 2 | [anthropics/claude-code](https://github.com/anthropics/claude-code) | 140.7k | +884 | Python | 2026-08-08 | Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands. |
 | 3 | [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) | 106.4k | +137 | TypeScript | 2026-08-08 | An open-source AI agent that brings the power of Gemini directly into your terminal. |
 | 4 | [openai/codex](https://github.com/openai/codex) | 104.8k | +1844 | Rust | 2026-08-08 | Lightweight coding agent that runs in your terminal |
