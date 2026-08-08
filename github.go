@@ -194,7 +194,7 @@ func doWithRetry(token string, body []byte) ([]byte, int, error) {
 		}
 
 		raw, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close() // body fully read (or read failed); close error is not actionable
 		if err != nil {
 			lastErr = fmt.Errorf("read body: %w", err)
 			continue

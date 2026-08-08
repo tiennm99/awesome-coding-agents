@@ -63,7 +63,7 @@ func readSnapshots(path string) ([]Snapshot, error) {
 		}
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // read-only; close error is not actionable
 
 	var out []Snapshot
 	scanner := bufio.NewScanner(f)
@@ -125,10 +125,13 @@ func writeSnapshots(path string, snapshots []Snapshot) error {
 	if syncErr := f.Sync(); syncErr != nil && writeErr == nil {
 		writeErr = syncErr
 	}
-	f.Close()
+	// A failed close on a write path can hide lost data — surface it.
+	if closeErr := f.Close(); closeErr != nil && writeErr == nil {
+		writeErr = closeErr
+	}
 
 	if writeErr != nil {
-		os.Remove(tmp)
+		_ = os.Remove(tmp) // best-effort cleanup; the write error is what matters
 		return writeErr
 	}
 
