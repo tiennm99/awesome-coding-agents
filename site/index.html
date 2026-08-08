@@ -280,6 +280,9 @@
   const hiddenState = {}; // repo key -> hidden bool, survives chart re-renders
 
   function renderChart() {
+    // Degraded mode: filter/search handlers still call this after the early
+    // CDN-failure return; without the guard they hit TDZ consts and throw.
+    if (!window.Chart) return;
     const list = visible();
     const datasets = list.map((r, i) => {
       const pts = data.history.map(s => s.stars[r.key] ?? null);
