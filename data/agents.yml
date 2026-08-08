@@ -39,12 +39,14 @@ agents:
   - owner: AntonOsika
     repo: gpt-engineer
     category: cli
+    notes: Archived upstream (read-only); kept for historical significance
   - owner: SWE-agent
     repo: SWE-agent
     category: research
   - owner: RooCodeInc
     repo: Roo-Code
     category: extension
+    notes: Archived upstream (read-only)
   - owner: TabbyML
     repo: tabby
     category: ide
@@ -54,6 +56,7 @@ agents:
   - owner: voideditor
     repo: void
     category: ide
+    notes: Archived upstream (read-only)
   - owner: anthropics
     repo: claude-code
     category: cli
