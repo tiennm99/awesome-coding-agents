@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -25,6 +26,7 @@ type Stat struct {
 	PushedAt      time.Time
 	URL           string
 	NameWithOwner string
+	IsArchived    bool
 }
 
 type repoNode struct {
@@ -36,6 +38,7 @@ type repoNode struct {
 	PushedAt      time.Time `json:"pushedAt"`
 	URL           string    `json:"url"`
 	NameWithOwner string    `json:"nameWithOwner"`
+	IsArchived    bool      `json:"isArchived"`
 }
 
 type graphQLResponse struct {
@@ -53,10 +56,17 @@ const repoFields = `
 		pushedAt
 		url
 		nameWithOwner
+		isArchived
 	`
 
 // httpClient has a timeout to prevent hung workflow jobs.
 var httpClient = &http.Client{Timeout: 30 * time.Second}
+
+// graphqlURL is a seam for tests: production always talks to GitHub, but
+// tests point this at an httptest server to exercise the whole fetch path
+// (chunking, alias offsets, missing-node, GraphQL-error handling) without
+// a network call or token.
+var graphqlURL = "https://api.github.com/graphql"
 
 // chunkSize is the max aliases per GraphQL request (GitHub node-limit safety margin).
 const chunkSize = 50
@@ -94,14 +104,25 @@ func fetchStats(token string, agents []Agent) ([]Stat, error) {
 		alias := fmt.Sprintf("r%d", i)
 		node := collected[alias]
 		if node == nil {
-			return nil, fmt.Errorf("repo %s/%s missing from GraphQL response", a.Owner, a.Repo)
+			return nil, fmt.Errorf("repo %s/%s (alias %s) missing from GraphQL response — deleted, private, or renamed?", a.Owner, a.Repo, alias)
 		}
 		lang := ""
 		if node.PrimaryLanguage != nil {
 			lang = node.PrimaryLanguage.Name
 		}
+
+		// Drift detection: surface renames/archival as GitHub Actions run
+		// annotations so a human notices without polling every repo by hand.
+		canonicalKey := a.Owner + "/" + a.Repo
+		if node.NameWithOwner != "" && !strings.EqualFold(node.NameWithOwner, canonicalKey) {
+			fmt.Printf("::warning::repo %s renamed to %s — update data/agents.yml and add a canonicalKeyMigrations entry\n", canonicalKey, node.NameWithOwner)
+		}
+		if node.IsArchived {
+			fmt.Printf("::warning::repo %s is archived — consider removing or annotating\n", canonicalKey)
+		}
+
 		stats = append(stats, Stat{
-			CanonicalKey:  a.Owner + "/" + a.Repo,
+			CanonicalKey:  canonicalKey,
 			Owner:         a.Owner,
 			Repo:          a.Repo,
 			Category:      a.Category,
@@ -112,6 +133,7 @@ func fetchStats(token string, agents []Agent) ([]Stat, error) {
 			PushedAt:      node.PushedAt,
 			URL:           node.URL,
 			NameWithOwner: node.NameWithOwner,
+			IsArchived:    node.IsArchived,
 		})
 	}
 
@@ -160,12 +182,37 @@ func fetchChunk(token string, agents []Agent, aliasOffset int) (map[string]*repo
 	if len(out.Errors) > 0 {
 		msgs := make([]string, len(out.Errors))
 		for i, e := range out.Errors {
-			msgs[i] = fmt.Sprintf("%s (path=%v)", e.Message, e.Path)
+			msgs[i] = fmt.Sprintf("%s (%s)", e.Message, describeErrorPath(e.Path, agents, aliasOffset))
 		}
 		return nil, fmt.Errorf("graphql errors: %s", strings.Join(msgs, "; "))
 	}
 
 	return out.Data, nil
+}
+
+// describeErrorPath translates a GraphQL error path such as
+// ["r17", "stargazerCount"] into a human-readable repo reference, e.g.
+// "repo foo/bar (alias r17)", using the alias→Agent mapping for this chunk
+// (aliasOffset + local index). Falls back to the raw path if the alias
+// can't be resolved (unexpected path shape or out-of-range index).
+func describeErrorPath(path []any, agents []Agent, aliasOffset int) string {
+	if len(path) == 0 {
+		return "path=[]"
+	}
+	aliasStr, ok := path[0].(string)
+	if !ok || !strings.HasPrefix(aliasStr, "r") {
+		return fmt.Sprintf("path=%v", path)
+	}
+	idx, err := strconv.Atoi(aliasStr[1:])
+	if err != nil {
+		return fmt.Sprintf("path=%v", path)
+	}
+	local := idx - aliasOffset
+	if local < 0 || local >= len(agents) {
+		return fmt.Sprintf("path=%v (alias %s)", path, aliasStr)
+	}
+	a := agents[local]
+	return fmt.Sprintf("repo %s/%s (alias %s)", a.Owner, a.Repo, aliasStr)
 }
 
 // doWithRetry executes the GraphQL POST with exponential backoff on transient
@@ -179,7 +226,7 @@ func doWithRetry(token string, body []byte) ([]byte, int, error) {
 			time.Sleep(retryBackoff[attempt-1])
 		}
 
-		req, err := http.NewRequest("POST", "https://api.github.com/graphql", bytes.NewReader(body))
+		req, err := http.NewRequest("POST", graphqlURL, bytes.NewReader(body))
 		if err != nil {
 			return nil, 0, err
 		}

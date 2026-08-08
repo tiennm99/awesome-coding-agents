@@ -1,12 +1,24 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
 )
 
 func main() {
+	check := flag.Bool("check", false, "validate data/agents.yml offline (no network, no token) and exit")
+	flag.Parse()
+
+	if *check {
+		if err := runCheck("data/agents.yml"); err != nil {
+			log.Printf("check failed: %v", err)
+			os.Exit(1)
+		}
+		return
+	}
+
 	if err := run(); err != nil {
 		log.Fatalf("update failed: %v", err)
 	}
@@ -31,16 +43,16 @@ func run() error {
 		return err
 	}
 
-	snapshots, deltas, err := appendHistory("data/history.jsonl", stats)
+	snapshots, deltas7, deltas30, err := appendHistory("data/history.jsonl", stats)
 	if err != nil {
 		return err
 	}
 
-	if err := renderReadme("templates/readme.tmpl", "README.md", stats, deltas); err != nil {
+	if err := renderReadme("templates/readme.tmpl", "README.md", stats, deltas7); err != nil {
 		return err
 	}
 
-	if err := writeSiteData("site/data.json", stats, deltas, snapshots); err != nil {
+	if err := writeSiteData("site/data.json", stats, deltas7, deltas30, snapshots); err != nil {
 		return err
 	}
 

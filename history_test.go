@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -172,6 +173,172 @@ func TestApplyMigrations(t *testing.T) {
 	// Other keys should be unchanged.
 	if v, ok := result["other/repo"]; !ok || v != 1000 {
 		t.Errorf("'other/repo': expected 1000, got %v", v)
+	}
+}
+
+func TestApplyMigrations_ChainResolvesFullyRegardlessOfOrder(t *testing.T) {
+	// A→B→C chain must always collapse to C, whether the map happens to be
+	// iterated A-then-B or B-then-A (Go randomizes map iteration order).
+	origMigrations := canonicalKeyMigrations
+	defer func() { canonicalKeyMigrations = origMigrations }()
+	canonicalKeyMigrations = map[string]string{
+		"org/a": "org/b",
+		"org/b": "org/c",
+	}
+
+	// Run many times: map iteration order is randomized per run, so this
+	// gives confidence the result doesn't depend on it.
+	for i := 0; i < 50; i++ {
+		stars := map[string]int{"org/a": 10, "other/repo": 5}
+		result := applyMigrations(stars)
+
+		if _, ok := result["org/a"]; ok {
+			t.Fatalf("iteration %d: old key 'org/a' should be removed", i)
+		}
+		if _, ok := result["org/b"]; ok {
+			t.Fatalf("iteration %d: dead intermediate key 'org/b' should not exist", i)
+		}
+		if v, ok := result["org/c"]; !ok || v != 10 {
+			t.Fatalf("iteration %d: terminal key 'org/c': expected 10, got %v (ok=%v)", i, v, ok)
+		}
+		if v, ok := result["other/repo"]; !ok || v != 5 {
+			t.Fatalf("iteration %d: unrelated key 'other/repo' should be unchanged", i)
+		}
+	}
+}
+
+func TestResolveCanonicalKey_CycleDoesNotHang(t *testing.T) {
+	origMigrations := canonicalKeyMigrations
+	defer func() { canonicalKeyMigrations = origMigrations }()
+	canonicalKeyMigrations = map[string]string{
+		"org/a": "org/b",
+		"org/b": "org/a",
+	}
+
+	done := make(chan string, 1)
+	go func() { done <- resolveCanonicalKey("org/a") }()
+
+	select {
+	case got := <-done:
+		if got != "org/a" {
+			t.Errorf("expected cycle to resolve back to original key 'org/a', got %q", got)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("resolveCanonicalKey hung on a migration cycle")
+	}
+}
+
+func TestResolveCanonicalKey_ExceedsHopCapKeepsOriginal(t *testing.T) {
+	origMigrations := canonicalKeyMigrations
+	defer func() { canonicalKeyMigrations = origMigrations }()
+	// A chain longer than maxMigrationHops with no cycle — must still
+	// terminate and fall back to the original key.
+	migrations := make(map[string]string, maxMigrationHops+5)
+	for i := 0; i < maxMigrationHops+5; i++ {
+		migrations[fmt.Sprintf("org/k%d", i)] = fmt.Sprintf("org/k%d", i+1)
+	}
+	canonicalKeyMigrations = migrations
+
+	got := resolveCanonicalKey("org/k0")
+	if got != "org/k0" {
+		t.Errorf("expected hop-cap fallback to original key 'org/k0', got %q", got)
+	}
+}
+
+func TestCanonicalKeyMigrations_NoChains(t *testing.T) {
+	// Invariant: every migration should point directly at the terminal
+	// canonical key. If a future edit introduces A→B, B→C without collapsing
+	// it to A→C, this test fails — guarding against the exact bug the
+	// transitive resolver in resolveCanonicalKey defends against at runtime.
+	for old, canonical := range canonicalKeyMigrations {
+		if _, ok := canonicalKeyMigrations[canonical]; ok {
+			t.Errorf("canonicalKeyMigrations[%q] = %q, but %q is itself a migration key — collapse the chain to point directly at the terminal canonical key", old, canonical, canonical)
+		}
+	}
+}
+
+func TestComputeDeltaOver_FixedNow_BoundaryEdges(t *testing.T) {
+	// Exercise the (cutoff-slackDays, cutoff] window with a fixed "now" so
+	// the exact day-count boundaries (7d cutoff, 10d lower bound for the
+	// 7-day delta) are deterministic rather than relative-to-test-run-time.
+	fixed := time.Date(2026, 8, 9, 12, 0, 0, 0, time.UTC)
+	orig := timeNow
+	timeNow = func() time.Time { return fixed }
+	defer func() { timeNow = orig }()
+
+	mk := func(daysAgo int) Snapshot {
+		return Snapshot{
+			Date:  fixed.AddDate(0, 0, -daysAgo).Format("2006-01-02"),
+			Stars: map[string]int{"org/repo": 50},
+		}
+	}
+	current := Snapshot{Date: fixed.Format("2006-01-02"), Stars: map[string]int{"org/repo": 200}}
+
+	tests := []struct {
+		name        string
+		daysAgo     int
+		expectDelta bool
+	}{
+		{"exactly at 7d cutoff — included", 7, true},
+		{"9d ago — inside (cutoff-3d, cutoff] window", 9, true},
+		{"exactly at 10d lower bound — excluded (window is exclusive lower bound)", 10, false},
+		{"11d ago — excluded", 11, false},
+		{"6d ago — newer than cutoff, excluded", 6, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			history := []Snapshot{mk(tt.daysAgo)}
+			deltas := computeDeltas(history, current)
+			_, ok := deltas["org/repo"]
+			if ok != tt.expectDelta {
+				t.Errorf("daysAgo=%d: expected delta present=%v, got %v", tt.daysAgo, tt.expectDelta, ok)
+			}
+			if ok && deltas["org/repo"] != 150 {
+				t.Errorf("daysAgo=%d: expected delta=150, got %d", tt.daysAgo, deltas["org/repo"])
+			}
+		})
+	}
+}
+
+func TestComputeDeltaOver_30Day_FixedNow(t *testing.T) {
+	// Same boundary shape as the 7-day delta, but for the 30d/5d-slack
+	// "momentum" window used for Delta30d.
+	fixed := time.Date(2026, 8, 9, 0, 0, 0, 0, time.UTC)
+	orig := timeNow
+	timeNow = func() time.Time { return fixed }
+	defer func() { timeNow = orig }()
+
+	mk := func(daysAgo, stars int) Snapshot {
+		return Snapshot{
+			Date:  fixed.AddDate(0, 0, -daysAgo).Format("2006-01-02"),
+			Stars: map[string]int{"org/repo": stars},
+		}
+	}
+	current := Snapshot{Date: fixed.Format("2006-01-02"), Stars: map[string]int{"org/repo": 1000}}
+
+	tests := []struct {
+		name        string
+		daysAgo     int
+		expectDelta bool
+	}{
+		{"exactly 30d cutoff — included", 30, true},
+		{"33d ago — inside (cutoff-5d, cutoff] window", 33, true},
+		{"exactly 35d lower bound — excluded", 35, false},
+		{"36d ago — excluded", 36, false},
+		{"29d ago — newer than cutoff, excluded", 29, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			history := []Snapshot{mk(tt.daysAgo, 400)}
+			deltas := computeDeltaOver(history, current, 30, 5)
+			_, ok := deltas["org/repo"]
+			if ok != tt.expectDelta {
+				t.Errorf("daysAgo=%d: expected delta present=%v, got %v", tt.daysAgo, tt.expectDelta, ok)
+			}
+			if ok && deltas["org/repo"] != 600 {
+				t.Errorf("daysAgo=%d: expected delta=600, got %d", tt.daysAgo, deltas["org/repo"])
+			}
+		})
 	}
 }
 

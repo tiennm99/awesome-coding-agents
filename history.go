@@ -29,10 +29,16 @@ var canonicalKeyMigrations = map[string]string{
 	"gpt-engineer-org/gpt-engineer": "AntonOsika/gpt-engineer",
 }
 
+// timeNow is a seam for tests: production code always calls time.Now, but
+// tests can override this var to exercise fixed-calendar-date scenarios
+// (delta window boundaries, migration+delta combinations) deterministically.
+var timeNow = time.Now
+
 // appendHistory persists today's snapshot and returns the full snapshot list
-// (oldest first, including today) plus the 7-day deltas per canonical key.
-func appendHistory(path string, stats []Stat) ([]Snapshot, map[string]int, error) {
-	today := time.Now().UTC().Format("2006-01-02")
+// (oldest first, including today) plus the 7-day and 30-day deltas per
+// canonical key.
+func appendHistory(path string, stats []Stat) (snapshots []Snapshot, deltas7 map[string]int, deltas30 map[string]int, err error) {
+	today := timeNow().UTC().Format("2006-01-02")
 
 	// Key snapshots by canonical owner/repo from agents.yml, not by the
 	// API-returned nameWithOwner, so renames don't orphan historical data.
@@ -41,18 +47,22 @@ func appendHistory(path string, stats []Stat) ([]Snapshot, map[string]int, error
 		current.Stars[s.CanonicalKey] = s.Stars
 	}
 
-	snapshots, err := readSnapshots(path)
+	history, err := readSnapshots(path)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
-	deltas := computeDeltas(snapshots, current)
+	deltas7 = computeDeltas(history, current)
+	deltas30 = computeDeltaOver(history, current, 30, 5)
 
 	// Drop any pre-existing snapshot for today, then append current.
-	kept := slices.DeleteFunc(snapshots, func(s Snapshot) bool { return s.Date == today })
+	kept := slices.DeleteFunc(history, func(s Snapshot) bool { return s.Date == today })
 	kept = append(kept, current)
 
-	return kept, deltas, writeSnapshots(path, kept)
+	if err := writeSnapshots(path, kept); err != nil {
+		return nil, nil, nil, err
+	}
+	return kept, deltas7, deltas30, nil
 }
 
 func readSnapshots(path string) ([]Snapshot, error) {
@@ -92,16 +102,56 @@ func readSnapshots(path string) ([]Snapshot, error) {
 // applyMigrations rewrites any deprecated history keys to their current
 // canonical form. Old keys are removed; new keys accumulate stars additively
 // (in practice the old key had no concurrent new entry, so max is the same).
+//
+// Each old key is resolved transitively via resolveCanonicalKey, so a chain
+// of renames (A→B, B→C) always lands on the terminal key C regardless of the
+// order canonicalKeyMigrations happens to be iterated in (map order is
+// randomized by Go at runtime).
 func applyMigrations(stars map[string]int) map[string]int {
-	for old, canonical := range canonicalKeyMigrations {
-		if v, ok := stars[old]; ok {
-			if stars[canonical] < v {
-				stars[canonical] = v
-			}
-			delete(stars, old)
+	for old := range canonicalKeyMigrations {
+		v, ok := stars[old]
+		if !ok {
+			continue
 		}
+		canonical := resolveCanonicalKey(old)
+		if canonical == old {
+			continue // cycle or hop-cap hit; resolveCanonicalKey already logged
+		}
+		if stars[canonical] < v {
+			stars[canonical] = v
+		}
+		delete(stars, old)
 	}
 	return stars
+}
+
+// maxMigrationHops caps chain resolution so a misconfigured cycle in
+// canonicalKeyMigrations can't hang the updater.
+const maxMigrationHops = 10
+
+// resolveCanonicalKey follows canonicalKeyMigrations transitively from key
+// until it reaches a terminal key (one with no further migration entry).
+// If following the chain would exceed maxMigrationHops, or a cycle is
+// detected, the cycle/misconfiguration is logged to stderr and the original
+// key is returned unchanged — this degrades to "no migration applied"
+// rather than dropping data or looping forever.
+func resolveCanonicalKey(key string) string {
+	seen := map[string]bool{key: true}
+	current := key
+	for hop := 0; hop < maxMigrationHops; hop++ {
+		next, ok := canonicalKeyMigrations[current]
+		if !ok {
+			return current
+		}
+		if seen[next] {
+			fmt.Fprintf(os.Stderr, "canonicalKeyMigrations: cycle detected resolving %q (hit %q again); keeping original key unchanged\n", key, next)
+			return key
+		}
+		seen[next] = true
+		current = next
+	}
+	fmt.Fprintf(os.Stderr, "canonicalKeyMigrations: exceeded %d hops resolving %q; keeping original key unchanged\n", maxMigrationHops, key)
+	return key
 }
 
 // writeSnapshots writes to a temp file then renames atomically so a crash
@@ -139,16 +189,24 @@ func writeSnapshots(path string, snapshots []Snapshot) error {
 }
 
 // computeDeltas returns stars-now minus stars-at-or-before-cutoff for each
-// repo. Cutoff = 7 days ago UTC. The chosen prior snapshot must be within a
-// 3-day window of the cutoff; if cron was skipped for more than 10 days the
-// delta would be misleadingly labeled "Δ7d", so we return no delta instead.
+// repo, cutoff = 7 days ago UTC, with a 3-day slack window. See
+// computeDeltaOver for the general form (used for the 30-day/"momentum"
+// delta too).
 func computeDeltas(history []Snapshot, current Snapshot) map[string]int {
+	return computeDeltaOver(history, current, 7, 3)
+}
+
+// computeDeltaOver returns stars-now minus stars-at-or-before-cutoff for
+// each repo, where cutoff = days ago (UTC). The chosen prior snapshot must
+// fall within a slackDays window of the cutoff — i.e. in
+// (cutoff - slackDays, cutoff]; if cron was skipped for longer than that,
+// the delta would be misleadingly labeled "Δ<days>d", so we return no delta
+// for that repo instead.
+func computeDeltaOver(history []Snapshot, current Snapshot, days, slackDays int) map[string]int {
 	deltas := map[string]int{}
-	now := time.Now().UTC()
-	cutoff := now.AddDate(0, 0, -7).Format("2006-01-02")
-	// Accept snapshots in (cutoff - 3 days, cutoff]. A snapshot older than
-	// cutoff-3d is too stale to label as a 7-day delta.
-	lowerBound := now.AddDate(0, 0, -10).Format("2006-01-02")
+	now := timeNow().UTC()
+	cutoff := now.AddDate(0, 0, -days).Format("2006-01-02")
+	lowerBound := now.AddDate(0, 0, -(days + slackDays)).Format("2006-01-02")
 
 	var base *Snapshot
 	for i := range history {

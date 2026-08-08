@@ -6,6 +6,9 @@
 📊 **[Interactive dashboard with star-history charts →](https://tiennm99.github.io/awesome-coding-agents/)**
 
 **Last updated:** {{.UpdatedAt}} · **Tracked:** {{.Total}} repos
+{{- if .TopMover.HasMover }}
+**Top 7-day mover:** [{{ .TopMover.NameWithOwner }}]({{ .TopMover.URL }}) ({{ formatDelta .TopMover.Delta true }} stars)
+{{- end }}
 
 | # | Repo | Stars | Δ7d | Language | Last push | Description |
 |---|------|------:|----:|----------|-----------|-------------|
@@ -38,6 +41,8 @@ agents:
 ```
 
 Open a PR. The next daily run picks it up automatically.
+
+PRs are validated automatically by CI (`go run . -check`): owner/repo must be non-empty and look like a real GitHub slug, category must be one of the values above, and duplicates (case-insensitive) are rejected.
 
 ## License
 

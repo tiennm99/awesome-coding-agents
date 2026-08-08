@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"os"
-	"time"
 )
 
 // siteRow is one ranked repo in site/data.json, consumed by site/index.html.
@@ -14,11 +13,14 @@ type siteRow struct {
 	Stars         int    `json:"stars"`
 	Delta7d       int    `json:"delta7d"`
 	HasDelta      bool   `json:"hasDelta"`
+	Delta30d      int    `json:"delta30d"`
+	HasDelta30    bool   `json:"hasDelta30"`
 	Language      string `json:"language"`
 	PushedAt      string `json:"pushedAt"`
 	Description   string `json:"description"`
 	Category      string `json:"category"`
 	Notes         string `json:"notes,omitempty"`
+	Archived      bool   `json:"archived"`
 }
 
 type siteData struct {
@@ -30,27 +32,31 @@ type siteData struct {
 // writeSiteData emits the JSON payload for the GitHub Pages dashboard.
 // The file is generated fresh on every updater run and is not committed;
 // the Pages deploy step in the workflow picks it up from the working tree.
-func writeSiteData(path string, stats []Stat, deltas map[string]int, history []Snapshot) error {
+func writeSiteData(path string, stats []Stat, deltas7, deltas30 map[string]int, history []Snapshot) error {
 	rows := make([]siteRow, len(stats))
 	for i, s := range stats {
-		delta, has := deltas[s.CanonicalKey]
+		delta7, has7 := deltas7[s.CanonicalKey]
+		delta30, has30 := deltas30[s.CanonicalKey]
 		rows[i] = siteRow{
 			Key:           s.CanonicalKey,
 			NameWithOwner: s.NameWithOwner,
 			URL:           s.URL,
 			Stars:         s.Stars,
-			Delta7d:       delta,
-			HasDelta:      has,
+			Delta7d:       delta7,
+			HasDelta:      has7,
+			Delta30d:      delta30,
+			HasDelta30:    has30,
 			Language:      s.Language,
 			PushedAt:      s.PushedAt.Format("2006-01-02"),
 			Description:   s.Description,
 			Category:      s.Category,
 			Notes:         s.Notes,
+			Archived:      s.IsArchived,
 		}
 	}
 
 	out, err := json.Marshal(siteData{
-		UpdatedAt: time.Now().UTC().Format("2006-01-02 15:04 UTC"),
+		UpdatedAt: timeNow().UTC().Format("2006-01-02 15:04 UTC"),
 		Rows:      rows,
 		History:   history,
 	})

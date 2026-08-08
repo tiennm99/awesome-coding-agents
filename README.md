@@ -5,23 +5,24 @@
 
 📊 **[Interactive dashboard with star-history charts →](https://tiennm99.github.io/awesome-coding-agents/)**
 
-**Last updated:** 2026-08-08 19:48 UTC · **Tracked:** 29 repos
+**Last updated:** 2026-08-08 20:14 UTC · **Tracked:** 29 repos
+**Top 7-day mover:** [anomalyco/opencode](https://github.com/anomalyco/opencode) (+3360 stars)
 
 | # | Repo | Stars | Δ7d | Language | Last push | Description |
 |---|------|------:|----:|----------|-----------|-------------|
-| 1 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | 195.1k | +3356 | TypeScript | 2026-08-08 | The open source coding agent. |
-| 2 | [anthropics/claude-code](https://github.com/anthropics/claude-code) | 140.7k | +882 | Python | 2026-08-08 | Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands. |
+| 1 | [anomalyco/opencode](https://github.com/anomalyco/opencode) | 195.1k | +3360 | TypeScript | 2026-08-08 | The open source coding agent. |
+| 2 | [anthropics/claude-code](https://github.com/anthropics/claude-code) | 140.7k | +884 | Python | 2026-08-08 | Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands. |
 | 3 | [google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli) | 106.4k | +136 | TypeScript | 2026-08-08 | An open-source AI agent that brings the power of Gemini directly into your terminal. |
-| 4 | [openai/codex](https://github.com/openai/codex) | 104.8k | +1842 | Rust | 2026-08-08 | Lightweight coding agent that runs in your terminal |
-| 5 | [zed-industries/zed](https://github.com/zed-industries/zed) | 88.3k | +433 | Rust | 2026-08-08 | Code at the speed of thought – Zed is a high-performance, multiplayer code editor from the creators of Atom and Tree-sitter. |
+| 4 | [openai/codex](https://github.com/openai/codex) | 104.8k | +1844 | Rust | 2026-08-08 | Lightweight coding agent that runs in your terminal |
+| 5 | [zed-industries/zed](https://github.com/zed-industries/zed) | 88.3k | +434 | Rust | 2026-08-08 | Code at the speed of thought – Zed is a high-performance, multiplayer code editor from the creators of Atom and Tree-sitter. |
 | 6 | [earendil-works/pi](https://github.com/earendil-works/pi) | 85.6k | — | TypeScript | 2026-08-08 | AI agent toolkit: unified LLM API, agent loop, TUI, coding agent CLI |
 | 7 | [OpenHands/OpenHands](https://github.com/OpenHands/OpenHands) | 83.5k | — | TypeScript | 2026-08-08 | 🙌 OpenHands: AI-Driven Development |
 | 8 | [cline/cline](https://github.com/cline/cline) | 65.9k | +543 | TypeScript | 2026-08-08 | Autonomous coding agent as an SDK, IDE extension, or CLI assistant. |
 | 9 | [warpdotdev/warp](https://github.com/warpdotdev/warp) | 64.1k | — | Rust | 2026-08-08 | Warp is an agentic development environment, born out of the terminal. |
 | 10 | [AntonOsika/gpt-engineer](https://github.com/AntonOsika/gpt-engineer) | 55.2k | -17 | Python | 2025-05-14 | CLI platform to experiment with codegen. Precursor to: https://lovable.dev |
-| 11 | [aaif-goose/goose](https://github.com/aaif-goose/goose) | 52.6k | +520 | Rust | 2026-08-08 | an open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM |
+| 11 | [aaif-goose/goose](https://github.com/aaif-goose/goose) | 52.6k | +522 | Rust | 2026-08-08 | an open source, extensible AI agent that goes beyond code suggestions - install, execute, edit, and test with any LLM |
 | 12 | [Aider-AI/aider](https://github.com/Aider-AI/aider) | 48.1k | +210 | Python | 2026-05-22 | aider is AI pair programming in your terminal |
-| 13 | [continuedev/continue](https://github.com/continuedev/continue) | 35.4k | +143 | TypeScript | 2026-08-08 | open-source coding agent |
+| 13 | [continuedev/continue](https://github.com/continuedev/continue) | 35.4k | +144 | TypeScript | 2026-08-08 | open-source coding agent |
 | 14 | [TabbyML/tabby](https://github.com/TabbyML/tabby) | 33.8k | +18 | Rust | 2026-06-30 | Self-hosted AI coding assistant |
 | 15 | [Pythagora-io/gpt-pilot](https://github.com/Pythagora-io/gpt-pilot) | 33.7k | — | Python | 2026-06-18 | The first real AI developer |
 | 16 | [voideditor/void](https://github.com/voideditor/void) | 28.9k | -6 | TypeScript | 2026-06-02 |  |
@@ -64,6 +65,8 @@ agents:
 ```
 
 Open a PR. The next daily run picks it up automatically.
+
+PRs are validated automatically by CI (`go run . -check`): owner/repo must be non-empty and look like a real GitHub slug, category must be one of the values above, and duplicates (case-insensitive) are rejected.
 
 ## License
 

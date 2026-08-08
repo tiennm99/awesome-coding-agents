@@ -97,7 +97,7 @@
     overflow-x: auto; border: 1px solid var(--border); border-radius: 12px;
     background: var(--surface); box-shadow: var(--shadow);
   }
-  table { border-collapse: collapse; width: 100%; min-width: 780px; }
+  table { border-collapse: collapse; width: 100%; min-width: 840px; }
   th, td { padding: .55rem .75rem; text-align: left; border-top: 1px solid var(--border); }
   thead th {
     border-top: none; background: var(--surface-2); user-select: none; white-space: nowrap;
@@ -202,6 +202,7 @@
       <th scope="col" data-k="nameWithOwner" tabindex="0">Repo</th>
       <th scope="col" data-k="stars" class="num" tabindex="0">Stars</th>
       <th scope="col" data-k="delta7d" class="num" tabindex="0">Δ7d</th>
+      <th scope="col" data-k="delta30d" class="num" tabindex="0">Δ30d</th>
       <th scope="col" data-k="category" tabindex="0">Category</th>
       <th scope="col" data-k="language" tabindex="0">Language</th>
       <th scope="col" data-k="pushedAt" tabindex="0">Last push</th>
@@ -316,11 +317,12 @@
 
   function renderTable() {
     const list = [...visible()].sort((a, b) => {
-      if (sortKey === 'delta7d') {
-        // repos without a 7-day baseline always sort last, either direction
-        if (a.hasDelta !== b.hasDelta) return a.hasDelta ? -1 : 1;
-        if (!a.hasDelta) return 0;
-        return sortAsc ? a.delta7d - b.delta7d : b.delta7d - a.delta7d;
+      if (sortKey === 'delta7d' || sortKey === 'delta30d') {
+        // repos without a baseline for this window always sort last, either direction
+        const hasKey = sortKey === 'delta7d' ? 'hasDelta' : 'hasDelta30';
+        if (a[hasKey] !== b[hasKey]) return a[hasKey] ? -1 : 1;
+        if (!a[hasKey]) return 0;
+        return sortAsc ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey];
       }
       const va = a[sortKey], vb = b[sortKey];
       const cmp = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
@@ -339,18 +341,19 @@
     const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     const tbody = document.querySelector('#tbl tbody');
     if (!list.length) {
-      tbody.innerHTML = '<tr><td class="empty" colspan="8">No repos match your filters.</td></tr>';
+      tbody.innerHTML = '<tr><td class="empty" colspan="9">No repos match your filters.</td></tr>';
       return;
     }
     tbody.innerHTML = list.map(r => `
-      <tr${isStale(r) ? ' class="stale"' : ''}>
+      <tr${(isStale(r) || r.archived) ? ' class="stale"' : ''}>
         <td class="num rankcell">${r.rank}</td>
         <td><a class="repo" href="${esc(r.url)}">${esc(r.nameWithOwner)}</a></td>
         <td class="num">${fmtStars(r.stars)}</td>
         <td class="num ${r.hasDelta && r.delta7d > 0 ? 'pos' : r.hasDelta && r.delta7d < 0 ? 'neg' : ''}">${r.hasDelta ? (r.delta7d > 0 ? '+' : '') + r.delta7d : '—'}</td>
+        <td class="num ${r.hasDelta30 && r.delta30d > 0 ? 'pos' : r.hasDelta30 && r.delta30d < 0 ? 'neg' : ''}">${r.hasDelta30 ? (r.delta30d > 0 ? '+' : '') + r.delta30d : '—'}</td>
         <td><span class="cat${catClass(r.category)}">${esc(r.category || '—')}</span></td>
         <td class="lang">${esc(r.language || '')}</td>
-        <td>${esc(r.pushedAt)}${isStale(r) ? ' <span class="stalebadge">stale</span>' : ''}</td>
+        <td>${esc(r.pushedAt)}${isStale(r) ? ' <span class="stalebadge">stale</span>' : ''}${r.archived ? ' <span class="stalebadge">archived</span>' : ''}</td>
         <td class="desc">${esc(r.description)}${r.notes ? ' · <em>' + esc(r.notes) + '</em>' : ''}</td>
       </tr>`).join('');
   }

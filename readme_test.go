@@ -83,6 +83,30 @@ func TestSanitizeCell(t *testing.T) {
 			expected: "line1 line2 line3",
 			desc:     "both \\n and \\r converted",
 		},
+		{
+			name:     "backslash then pipe",
+			input:    `\|`,
+			expected: `\\\|`,
+			desc:     "backslash escaped first so it can't neutralize the pipe escape (finding: literal backslash + unescaped pipe previously broke the table row)",
+		},
+		{
+			name:     "lone backslash",
+			input:    `a\b`,
+			expected: `a\\b`,
+			desc:     "backslash doubled so Markdown doesn't interpret it as an escape",
+		},
+		{
+			name:     "raw html img tag",
+			input:    "<img src=x onerror=alert(1)>",
+			expected: "&lt;img src=x onerror=alert(1)&gt;",
+			desc:     "angle brackets entity-escaped so raw HTML can't be injected from a third-party description",
+		},
+		{
+			name:     "raw html script tag",
+			input:    "<script>alert(1)</script>",
+			expected: "&lt;script&gt;alert(1)&lt;/script&gt;",
+			desc:     "script tags neutralized via entity escaping",
+		},
 	}
 
 	for _, tt := range tests {
