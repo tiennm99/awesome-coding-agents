@@ -9,101 +9,169 @@
 <meta property="og:description" content="Daily-refreshed ranking of open-source AI coding agents by GitHub stars, with 7-day deltas and star-history charts.">
 <meta property="og:url" content="https://tiennm99.github.io/awesome-coding-agents/">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%E2%AD%90%3C%2Ftext%3E%3C%2Fsvg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600&family=Fira+Sans:wght@400;500;600&display=swap">
 <style>
+  /* Design system: "Data-Dense Dashboard" (ui-ux-pro-max) — blue primary,
+     amber accent, slate neutrals, Fira Code (data/headings) + Fira Sans (body). */
   :root {
-    --bg: #ffffff; --fg: #1f2328; --muted: #59626b; --border: #d0d7de;
-    --accent: #0969da; --chip: #f6f8fa; --chip-on: #0969da; --chip-on-fg: #fff;
-    --pos: #1a7f37; --neg: #cf222e; --row-hover: #f6f8fa;
+    --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9;
+    --fg: #1e293b; --muted: #5b6779; --border: #e2e8f0;
+    --primary: #2563eb; --primary-fg: #ffffff; --link: #1d4ed8;
+    --accent: #b45309; --pos: #15803d; --neg: #b91c1c;
+    --row-hover: #f1f5f9; --shadow: 0 1px 2px rgb(15 23 42 / .06);
     color-scheme: light dark;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0d1117; --fg: #e6edf3; --muted: #9ba3ad; --border: #30363d;
-      --accent: #58a6ff; --chip: #21262d; --chip-on: #1f6feb; --chip-on-fg: #fff;
-      --pos: #3fb950; --neg: #f85149; --row-hover: #161b22;
+      --bg: #0f172a; --surface: #1e293b; --surface-2: #263449;
+      --fg: #e2e8f0; --muted: #a5b1c5; --border: #334155;
+      --primary: #3b82f6; --primary-fg: #ffffff; --link: #93c5fd;
+      --accent: #fbbf24; --pos: #4ade80; --neg: #f87171;
+      --row-hover: #263449; --shadow: 0 1px 2px rgb(0 0 0 / .4);
     }
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; padding: 1.5rem; background: var(--bg); color: var(--fg);
-    font: 15px/1.5 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font: 16px/1.5 "Fira Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
     max-width: 1200px; margin-inline: auto;
   }
-  h1 { font-size: 1.6rem; margin: 0 0 .25rem; }
-  .sub { color: var(--muted); margin-bottom: 1.25rem; }
-  .sub a { color: var(--accent); }
+  code, .mono, h1, h2, .stat b, td.num, th.num, a.repo, .cat, .stalebadge, .dir {
+    font-family: "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+  }
+  header.hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  h1 { font-size: 1.55rem; font-weight: 600; margin: 0 0 .3rem; letter-spacing: -.02em; display: flex; align-items: center; gap: .55rem; }
+  h1 svg { color: var(--accent); flex: none; }
+  .sub { color: var(--muted); max-width: 46rem; }
+  .ghlink {
+    display: inline-flex; align-items: center; gap: .45rem; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+    border-radius: 8px; padding: .45rem .9rem; text-decoration: none; font-weight: 500;
+    box-shadow: var(--shadow); transition: border-color .15s ease, background-color .15s ease;
+  }
+  .ghlink:hover { border-color: var(--primary); }
   .vh {
     position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
-  .toolbar { display: flex; flex-wrap: wrap; gap: .5rem .75rem; align-items: center; margin: 1rem 0 .5rem; }
+  /* KPI stat cards */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11.5rem, 1fr)); gap: .75rem; margin: 0 0 1.25rem; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: .8rem 1rem; box-shadow: var(--shadow); min-width: 0;
+  }
+  .stat small { display: block; color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .06em; margin-bottom: .25rem; }
+  .stat b { display: block; font-size: 1.3rem; font-weight: 600; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .stat .statsub { color: var(--muted); font-size: .82rem; }
+  .stat .statsub.pos { color: var(--pos); }
+  /* Toolbar */
+  .toolbar { display: flex; flex-wrap: wrap; gap: .6rem .75rem; align-items: center; margin: 0 0 .6rem; }
+  .searchbox { position: relative; flex: 1 1 15rem; max-width: 26rem; }
+  .searchbox svg { position: absolute; left: .7rem; top: 50%; translate: 0 -50%; color: var(--muted); pointer-events: none; }
   #q {
-    border: 1px solid var(--border); background: var(--bg); color: var(--fg);
-    border-radius: 6px; padding: .4rem .75rem; font: inherit; min-width: 14rem; flex: 1 1 14rem; max-width: 24rem;
+    width: 100%; border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+    border-radius: 8px; padding: .5rem .75rem .5rem 2.2rem; font: inherit; box-shadow: var(--shadow);
+    transition: border-color .15s ease;
   }
   #q::placeholder { color: var(--muted); opacity: 1; }
-  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin: .5rem 0 1rem; }
+  #q:hover { border-color: var(--primary); }
+  .chips { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem; }
   .chips button, .btn {
-    border: 1px solid var(--border); background: var(--chip); color: var(--fg);
-    border-radius: 999px; padding: .3rem .85rem; cursor: pointer; font-size: .9rem;
-    transition: background-color .15s ease, border-color .15s ease;
+    border: 1px solid var(--border); background: var(--surface); color: var(--fg);
+    border-radius: 999px; padding: .35rem .9rem; cursor: pointer; font: inherit; font-size: .9rem; font-weight: 500;
+    box-shadow: var(--shadow); transition: background-color .15s ease, border-color .15s ease, color .15s ease;
   }
-  .btn { border-radius: 6px; }
-  .chips button.on, .btn[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-fg); border-color: var(--chip-on); }
-  .chips button:hover, .btn:hover { border-color: var(--accent); }
+  .btn { border-radius: 8px; }
+  .chips button.on, .btn[aria-pressed="true"] { background: var(--primary); color: var(--primary-fg); border-color: var(--primary); }
+  .chips button:hover, .btn:hover { border-color: var(--primary); }
   a:focus-visible, button:focus-visible, input:focus-visible, th[data-k]:focus-visible {
-    outline: 2px solid var(--accent); outline-offset: 2px;
+    outline: 2px solid var(--primary); outline-offset: 2px;
   }
-  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+  /* Table card */
+  .tablewrap {
+    overflow-x: auto; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); box-shadow: var(--shadow);
+  }
   table { border-collapse: collapse; width: 100%; min-width: 780px; }
-  th, td { padding: .5rem .75rem; text-align: left; border-top: 1px solid var(--border); }
-  thead th { border-top: none; background: var(--chip); user-select: none; white-space: nowrap; }
+  th, td { padding: .55rem .75rem; text-align: left; border-top: 1px solid var(--border); }
+  thead th {
+    border-top: none; background: var(--surface-2); user-select: none; white-space: nowrap;
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600;
+  }
   thead th[data-k] { cursor: pointer; }
-  thead th .dir { color: var(--accent); }
+  thead th[data-k]:hover { color: var(--fg); }
+  thead th .dir { color: var(--primary); }
+  tbody tr { transition: background-color .15s ease; }
   tbody tr:hover { background: var(--row-hover); }
-  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-size: .92rem; }
+  td.rankcell { color: var(--muted); }
   td.desc { color: var(--muted); font-size: .9rem; max-width: 34rem; }
-  a.repo { color: var(--accent); text-decoration: none; font-weight: 600; white-space: nowrap; }
+  td.lang { font-size: .92rem; }
+  a.repo { color: var(--link); text-decoration: none; font-weight: 500; white-space: nowrap; font-size: .92rem; }
   a.repo:hover { text-decoration: underline; }
   .pos { color: var(--pos); } .neg { color: var(--neg); }
+  /* Category badges: tinted per category; text label carries the meaning */
   .cat {
-    display: inline-block; font-size: .75rem; padding: .05rem .5rem;
-    border: 1px solid var(--border); border-radius: 999px; color: var(--muted);
+    display: inline-block; font-size: .74rem; font-weight: 500; padding: .1rem .55rem;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: var(--surface-2);
   }
+  .cat-cli       { border-color: color-mix(in srgb, var(--primary) 45%, var(--border)); color: var(--link); background: color-mix(in srgb, var(--primary) 12%, var(--surface)); }
+  .cat-ide       { border-color: color-mix(in srgb, #9333ea 45%, var(--border)); background: color-mix(in srgb, #9333ea 12%, var(--surface)); }
+  .cat-extension { border-color: color-mix(in srgb, #0d9488 45%, var(--border)); background: color-mix(in srgb, #0d9488 12%, var(--surface)); }
+  .cat-web       { border-color: color-mix(in srgb, #ea580c 45%, var(--border)); background: color-mix(in srgb, #ea580c 12%, var(--surface)); }
+  .cat-research  { border-color: color-mix(in srgb, #db2777 45%, var(--border)); background: color-mix(in srgb, #db2777 12%, var(--surface)); }
+  .cat-ide, .cat-extension, .cat-web, .cat-research { color: var(--fg); }
   tr.stale td { color: var(--muted); }
   .stalebadge {
-    display: inline-block; font-size: .72rem; padding: 0 .45rem; margin-left: .4rem;
-    border: 1px solid var(--border); border-radius: 999px; color: var(--muted);
+    display: inline-block; font-size: .7rem; padding: 0 .45rem; margin-left: .4rem;
+    border: 1px solid var(--border); border-radius: 999px; color: var(--muted); background: var(--surface-2);
     text-transform: uppercase; letter-spacing: .03em; vertical-align: middle;
   }
   td.empty { text-align: center; color: var(--muted); padding: 1.5rem; }
-  h2 { font-size: 1.2rem; margin: 0; }
-  .charthead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin: 2rem 0 .5rem; flex-wrap: wrap; }
-  .chartwrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  /* Chart card */
+  h2 { font-size: 1.1rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+  section.chartcard {
+    margin-top: 1.5rem; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; box-shadow: var(--shadow); padding: 1rem;
+  }
+  .charthead { display: flex; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: .75rem; flex-wrap: wrap; }
+  .chartwrap { position: relative; height: 460px; }
   .chartmsg { color: var(--muted); text-align: center; padding-top: 4rem; }
-  .hint { color: var(--muted); font-size: .85rem; margin: .35rem 0 0; }
+  .hint { color: var(--muted); font-size: .85rem; margin: .75rem 0 0; }
   #err { color: var(--neg); }
-  noscript p { border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
-  noscript a { color: var(--accent); }
+  footer { color: var(--muted); font-size: .85rem; margin: 1.5rem 0 .5rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+  footer a { color: var(--link); }
+  noscript p { border: 1px solid var(--border); border-radius: 12px; padding: 1rem; background: var(--surface); }
+  noscript a { color: var(--link); }
   @media (pointer: coarse) {
-    .chips button, .btn, #q { min-height: 44px; }
+    .chips button, .btn, #q, .ghlink { min-height: 44px; }
     thead th { padding-block: .85rem; }
   }
+  @media (max-width: 480px) { body { padding: 1rem; } .stats { grid-template-columns: 1fr 1fr; } }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; animation: none !important; }
   }
 </style>
 </head>
 <body>
-  <h1>Awesome Coding Agents</h1>
-  <div class="sub">
-    Curated ranking of AI agent coding tools by GitHub stars, refreshed daily ·
-    <span id="meta">loading…</span> ·
-    <a href="https://github.com/tiennm99/awesome-coding-agents">GitHub repo</a>
-  </div>
+  <header class="hero">
+    <div>
+      <h1>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.9 6.26L21.5 9.1l-4.9 4.5 1.3 6.7L12 17l-5.9 3.3 1.3-6.7-4.9-4.5 6.6-.84L12 2z"/></svg>
+        Awesome Coding Agents
+      </h1>
+      <div class="sub">Curated ranking of open-source AI coding agents by GitHub stars, refreshed daily. <span id="meta"></span></div>
+    </div>
+    <a class="ghlink" href="https://github.com/tiennm99/awesome-coding-agents">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </header>
   <div id="err" role="alert"></div>
 
   <noscript>
@@ -112,9 +180,19 @@
     <a href="https://github.com/tiennm99/awesome-coding-agents#readme">project README on GitHub</a>.</p>
   </noscript>
 
+  <div class="stats" id="stats" hidden>
+    <div class="stat"><small>Tracked repos</small><b id="statTracked">—</b></div>
+    <div class="stat"><small>Total stars</small><b id="statStars">—</b></div>
+    <div class="stat"><small>Top 7-day gainer</small><b id="statGainer">—</b><span class="statsub pos" id="statGainerDelta"></span></div>
+    <div class="stat"><small>Last updated</small><b id="statUpdated">—</b><span class="statsub">UTC, daily via Actions</span></div>
+  </div>
+
   <div class="toolbar">
     <label class="vh" for="q">Search repositories by name or description</label>
-    <input id="q" type="search" placeholder="Search repos…" autocomplete="off">
+    <div class="searchbox">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="q" type="search" placeholder="Search repos…" autocomplete="off">
+    </div>
   </div>
   <div class="chips" id="chips" role="group" aria-label="Filter by category"></div>
 
@@ -132,13 +210,20 @@
     <tbody></tbody>
   </table></div>
 
-  <div class="charthead">
-    <h2>Star history</h2>
-    <button type="button" id="scaleToggle" class="btn" aria-pressed="false">Log scale</button>
-  </div>
-  <div class="chartwrap"><canvas id="chart" role="img"
-    aria-label="Line chart of GitHub star history over time for the repositories listed in the table above."></canvas></div>
-  <p class="hint">Top 12 repos shown by default — click legend entries to toggle series. The category filter and search above also filter the chart.</p>
+  <section class="chartcard">
+    <div class="charthead">
+      <h2>Star history</h2>
+      <button type="button" id="scaleToggle" class="btn" aria-pressed="false">Log scale</button>
+    </div>
+    <div class="chartwrap"><canvas id="chart" role="img"
+      aria-label="Line chart of GitHub star history over time for the repositories listed in the table above."></canvas></div>
+    <p class="hint">Top 12 repos shown by default — click legend entries to toggle series. The category filter and search above also filter the chart.</p>
+  </section>
+
+  <footer>
+    <span>Data refreshed daily by <a href="https://github.com/tiennm99/awesome-coding-agents/actions">GitHub Actions</a>.</span>
+    <span>Add an agent via <a href="https://github.com/tiennm99/awesome-coding-agents#contributing">a pull request</a>.</span>
+  </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.9/dist/chart.umd.min.js"></script>
 <script>
@@ -154,8 +239,18 @@
   }
 
   const rows = data.rows.map((r, i) => ({ ...r, rank: i + 1 }));
-  document.getElementById('meta').textContent =
-    'Last updated ' + data.updatedAt + ' · ' + rows.length + ' repos tracked';
+  const fmtStars = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n);
+
+  // KPI stat cards
+  document.getElementById('stats').hidden = false;
+  document.getElementById('statTracked').textContent = rows.length;
+  document.getElementById('statStars').textContent = fmtStars(rows.reduce((s, r) => s + r.stars, 0));
+  const gainer = rows.filter(r => r.hasDelta).sort((a, b) => b.delta7d - a.delta7d)[0];
+  if (gainer) {
+    document.getElementById('statGainer').textContent = gainer.nameWithOwner.split('/')[1];
+    document.getElementById('statGainerDelta').textContent = '+' + gainer.delta7d.toLocaleString() + ' stars this week';
+  }
+  document.getElementById('statUpdated').textContent = data.updatedAt.replace(' UTC', '');
 
   const staleCutoff = new Date();
   staleCutoff.setMonth(staleCutoff.getMonth() - 6);
@@ -202,7 +297,6 @@
       String(r.description || '').toLowerCase().includes(query)));
 
   // --- sortable table ---
-  const fmtStars = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'k' : String(n);
   let sortKey = 'rank', sortAsc = true;
   document.querySelectorAll('thead th[data-k]').forEach(th => {
     const activate = () => {
@@ -216,6 +310,9 @@
       if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
     });
   });
+
+  // category → badge class; strict allowlist so third-party data can't inject class names
+  const catClass = c => /^[a-z][a-z0-9-]*$/.test(c || '') ? ' cat-' + c : '';
 
   function renderTable() {
     const list = [...visible()].sort((a, b) => {
@@ -247,12 +344,12 @@
     }
     tbody.innerHTML = list.map(r => `
       <tr${isStale(r) ? ' class="stale"' : ''}>
-        <td class="num">${r.rank}</td>
+        <td class="num rankcell">${r.rank}</td>
         <td><a class="repo" href="${esc(r.url)}">${esc(r.nameWithOwner)}</a></td>
         <td class="num">${fmtStars(r.stars)}</td>
         <td class="num ${r.hasDelta && r.delta7d > 0 ? 'pos' : r.hasDelta && r.delta7d < 0 ? 'neg' : ''}">${r.hasDelta ? (r.delta7d > 0 ? '+' : '') + r.delta7d : '—'}</td>
-        <td><span class="cat">${esc(r.category || '—')}</span></td>
-        <td>${esc(r.language || '')}</td>
+        <td><span class="cat${catClass(r.category)}">${esc(r.category || '—')}</span></td>
+        <td class="lang">${esc(r.language || '')}</td>
         <td>${esc(r.pushedAt)}${isStale(r) ? ' <span class="stalebadge">stale</span>' : ''}</td>
         <td class="desc">${esc(r.description)}${r.notes ? ' · <em>' + esc(r.notes) + '</em>' : ''}</td>
       </tr>`).join('');
@@ -275,6 +372,7 @@
   const styles = getComputedStyle(document.documentElement);
   Chart.defaults.color = styles.getPropertyValue('--muted').trim();
   Chart.defaults.borderColor = styles.getPropertyValue('--border').trim();
+  Chart.defaults.font.family = '"Fira Sans", sans-serif';
   let chart;
   let yType = 'linear';
   const hiddenState = {}; // repo key -> hidden bool, survives chart re-renders
