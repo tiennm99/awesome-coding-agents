@@ -9,6 +9,8 @@ on:
       - 'go.mod'
       - 'go.sum'
       - '.github/workflows/ci.yml'
+      - 'data/agents.yml'
+      - 'templates/**'
 
 permissions:
   contents: read
@@ -27,6 +29,7 @@ jobs:
       - run: go vet ./...
       - run: go test ./...
       - run: go build ./...
+      - run: go run . -check
 
   lint:
     runs-on: ubuntu-latest

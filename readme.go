@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
-	"time"
 )
 
 type Row struct {
@@ -22,8 +21,19 @@ type Row struct {
 	Category      string
 }
 
+// TopMover is the biggest 7-day gainer, surfaced as a one-line callout above
+// the README table. HasMover is false when no repo has a 7-day delta yet
+// (e.g. history younger than 7 days) — the template omits the line then.
+type TopMover struct {
+	NameWithOwner string
+	URL           string
+	Delta         int
+	HasMover      bool
+}
+
 func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int) error {
 	rows := make([]Row, len(stats))
+	var topMover TopMover
 	for i, s := range stats {
 		// Deltas are keyed by CanonicalKey (owner/repo from agents.yml).
 		delta, has := deltas[s.CanonicalKey]
@@ -38,6 +48,9 @@ func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int)
 			PushedAt:      s.PushedAt.Format("2006-01-02"),
 			Description:   sanitizeCell(s.Description),
 			Category:      s.Category,
+		}
+		if has && (!topMover.HasMover || delta > topMover.Delta) {
+			topMover = TopMover{NameWithOwner: s.NameWithOwner, URL: s.URL, Delta: delta, HasMover: true}
 		}
 	}
 
@@ -78,8 +91,9 @@ func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int)
 
 	execErr := tmpl.ExecuteTemplate(f, filepath.Base(tmplPath), map[string]any{
 		"Rows":      rows,
-		"UpdatedAt": time.Now().UTC().Format("2006-01-02 15:04 UTC"),
+		"UpdatedAt": timeNow().UTC().Format("2006-01-02 15:04 UTC"),
 		"Total":     len(rows),
+		"TopMover":  topMover,
 	})
 	// A failed close on a write path can hide lost data — surface it.
 	if closeErr := f.Close(); closeErr != nil && execErr == nil {
@@ -88,9 +102,20 @@ func renderReadme(tmplPath, outPath string, stats []Stat, deltas map[string]int)
 	return execErr
 }
 
-// sanitizeCell escapes pipe and newline characters so descriptions stay in one table cell.
+// sanitizeCell makes a third-party repo description safe to embed in a
+// single Markdown table cell. Order matters:
+//  1. backslash first, so escaping added by later steps isn't re-escaped
+//     (also fixes `\|` rendering as a literal backslash + unescaped pipe,
+//     which broke the table row).
+//  2. pipe, so the cell can't inject a table column boundary.
+//  3. angle brackets → HTML entities, so raw HTML/script tags in a
+//     description can't be injected into the rendered README.
+//  4. newlines/carriage returns → space, so the cell stays one line.
 func sanitizeCell(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
 	s = strings.ReplaceAll(s, "|", "\\|")
+	s = strings.ReplaceAll(s, "<", "&lt;")
+	s = strings.ReplaceAll(s, ">", "&gt;")
 	s = strings.ReplaceAll(s, "\n", " ")
 	s = strings.ReplaceAll(s, "\r", " ")
 	return strings.TrimSpace(s)
